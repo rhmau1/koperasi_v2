@@ -30,4 +30,8 @@ class db_pegawai extends Authenticatable
     protected $hidden = [
         'password_pegawai',
     ];
+    public function levelAkses()
+    {
+        return $this->hasOne(db_user_level_akses::class, 'id_pegawai', 'id_pegawai');
+    }
 }

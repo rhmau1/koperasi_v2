@@ -49,7 +49,7 @@
             <div class="overlay"></div>
             <div class="search-overlay"></div>
 
-            @include('template.sidebar')
+            @include('template.sidebar', ['menus' => $menus])
 
             <!--  BEGIN CONTENT AREA  -->
             <div id="content" class="main-content">

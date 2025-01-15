@@ -57,4 +57,8 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function levelAkses()
+    {
+        return $this->hasOne(db_user_level_akses::class, 'id_user', 'id_user');
+    }
 }

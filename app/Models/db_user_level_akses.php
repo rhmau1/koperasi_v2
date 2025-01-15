@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class db_user_level_akses extends Model
 {
     use HasFactory;
+    protected $table = 'db_user_level_akses';
     protected $primaryKey = 'id_user_level_akses';
     public $timestamps = false;
 
@@ -25,4 +26,19 @@ class db_user_level_akses extends Model
         'deleted_at',
         'deleted_by',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user', 'id_user');
+    }
+
+    public function pegawai()
+    {
+        return $this->belongsTo(db_pegawai::class, 'id_pegawai', 'id_pegawai');
+    }
+
+    public function level()
+    {
+        return $this->belongsTo(db_user_level::class, 'id_level', 'id_level');
+    }
 }

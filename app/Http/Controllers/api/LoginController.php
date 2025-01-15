@@ -26,7 +26,10 @@ class LoginController extends Controller
             ], 401);
         }
 
-        $levelAkses = db_user_level_akses::where("id_{$levelKey}", $user->{"id_{$levelKey}"})->first();
+        $levelAkses = db_user_level_akses::with('level.userAkses.menu')
+            ->where("id_{$levelKey}", $user->{"id_{$levelKey}"})
+            ->first();
+        $menus = $levelAkses->level->userAkses->pluck('menu');
         if (!$levelAkses) {
             return response()->json([
                 'status_code' => 404,
@@ -47,7 +50,10 @@ class LoginController extends Controller
         return response()->json([
             'status_code' => 200,
             'message' => 'Success.',
-            'data' => $user
+            'data' => [
+                $user,
+                $menus
+            ]
         ], 200);
     }
 
