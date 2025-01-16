@@ -32,7 +32,9 @@
                             data-parent="#accordionExample">
                             @foreach ($menu->subMenus as $submenu)
                                 <li>
-                                    <a href="#{{ $menu->page }}"> {{ $submenu->nama_menu }} </a>
+                                    <a href="{{ url('dashboard/admin/' . $menu->page . '/' . $submenu->page) }}">
+                                        {{ $submenu->nama_menu }}
+                                    </a>
                                 </li>
                             @endforeach
                         </ul>
