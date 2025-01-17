@@ -82,6 +82,7 @@ class DashboardController extends Controller
         $request->validate([
             'nama_level' => 'required',
             'status' => 'required|boolean',
+            'melihat' => 'array',
             'hak_add' => 'array',
             'hak_edit' => 'array',
             'hak_delete' => 'array'
@@ -97,19 +98,21 @@ class DashboardController extends Controller
         foreach ($allMenu as $menu) {
             $id_menu = $menu->id_menu;
 
-            // $melihat = isset($request->melihat[$id_menu]) ? 1 : 0;
+            $melihat = isset($request->melihat[$id_menu]) ? 1 : 0;
             $hak_add = isset($request->hak_add[$id_menu]) ? 1 : 0;
             $hak_edit = isset($request->hak_edit[$id_menu]) ? 1 : 0;
             $hak_delete = isset($request->hak_delete[$id_menu]) ? 1 : 0;
 
-            db_user_akses::create([
-                'id_level' => $id_level,
-                'id_menu' => $id_menu,
-                // 'melihat' => $melihat,
-                'hak_add' => $hak_add,
-                'hak_edit' => $hak_edit,
-                'hak_delete' => $hak_delete,
-            ]);
+            if ($melihat) {
+                db_user_akses::create([
+                    'id_level' => $id_level,
+                    'id_menu' => $id_menu,
+                    // 'melihat' => $melihat,
+                    'hak_add' => $hak_add,
+                    'hak_edit' => $hak_edit,
+                    'hak_delete' => $hak_delete,
+                ]);
+            }
         }
 
         $userId = Auth::guard('web')->id();
@@ -151,6 +154,7 @@ class DashboardController extends Controller
         $request->validate([
             'nama_level' => 'required',
             'status' => 'required|boolean',
+            'melihat' => 'array',
             'hak_add' => 'array',
             'hak_edit' => 'array',
             'hak_delete' => 'array'
@@ -161,24 +165,40 @@ class DashboardController extends Controller
             'nama_level' => $request->nama_level,
             'status' => $request->status,
         ]);
+
         $allMenu = db_menu::all();
         foreach ($allMenu as $menu) {
             $id_menu = $menu->id_menu;
 
-            // $melihat = isset($request->melihat[$id_menu]) ? 1 : 0;
-            $hak_add = isset($request->hak_add[$id_menu]) ? 1 : 0;
-            $hak_edit = isset($request->hak_edit[$id_menu]) ? 1 : 0;
-            $hak_delete = isset($request->hak_delete[$id_menu]) ? 1 : 0;
+            $melihat = isset($request->melihat[$id_menu]) ? 1 : 0;
+
+            $hak_add = $melihat && isset($request->hak_add[$id_menu]) ? 1 : 0;
+            $hak_edit = $melihat && isset($request->hak_edit[$id_menu]) ? 1 : 0;
+            $hak_delete = $melihat && isset($request->hak_delete[$id_menu]) ? 1 : 0;
 
             $akses = db_user_akses::where('id_level', $id)->where('id_menu', $id_menu)->first();
-            $akses->update([
-                'id_level' => $id,
-                'id_menu' => $id_menu,
-                // 'melihat' => $melihat,
-                'hak_add' => $hak_add,
-                'hak_edit' => $hak_edit,
-                'hak_delete' => $hak_delete,
-            ]);
+
+            if ($melihat) {
+                if ($akses) {
+                    $akses->update([
+                        'id_level' => $id,
+                        'id_menu' => $id_menu,
+                        'hak_add' => $hak_add,
+                        'hak_edit' => $hak_edit,
+                        'hak_delete' => $hak_delete,
+                    ]);
+                } else {
+                    db_user_akses::create([
+                        'id_level' => $id,
+                        'id_menu' => $id_menu,
+                        'hak_add' => $hak_add,
+                        'hak_edit' => $hak_edit,
+                        'hak_delete' => $hak_delete,
+                    ]);
+                }
+            } elseif ($akses) {
+                $akses->delete();
+            }
         }
 
         $userId = Auth::guard('web')->id();
@@ -202,7 +222,9 @@ class DashboardController extends Controller
         foreach ($allMenu as $menu) {
             $id_menu = $menu->id_menu;
             $akses = db_user_akses::where('id_level', $id)->where('id_menu', $id_menu)->first();
-            $akses->delete();
+            if ($akses) {
+                $akses->delete();
+            }
         }
         $level = db_user_level::find($id);
         $level->delete();

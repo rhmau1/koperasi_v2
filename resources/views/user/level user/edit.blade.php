@@ -56,22 +56,26 @@
                                                     <td class="text-center">
                                                         <input type="checkbox" name="melihat[{{ $menu->id_menu }}]"
                                                             id="melihat_{{ $menu->id_menu }}"
-                                                            {{ isset($dataAkses[$menu->id_menu]['melihat']) && $dataAkses[$menu->id_menu]['melihat'] == 1 ? 'checked' : '' }}>
+                                                            {{ isset($dataAkses[$menu->id_menu]) ? 'checked' : '' }}
+                                                            onchange="toggleCheckboxes({{ $menu->id_menu }})">
                                                     </td>
                                                     <td class="text-center">
                                                         <input type="checkbox" name="hak_add[{{ $menu->id_menu }}]"
                                                             id="hak_add_{{ $menu->id_menu }}"
-                                                            {{ isset($dataAkses[$menu->id_menu]['hak_add']) && $dataAkses[$menu->id_menu]['hak_add'] == 1 ? 'checked' : '' }}>
+                                                            {{ isset($dataAkses[$menu->id_menu]['hak_add']) && $dataAkses[$menu->id_menu]['hak_add'] == 1 ? 'checked' : '' }}
+                                                            {{ !isset($dataAkses[$menu->id_menu]) ? 'disabled' : '' }}>
                                                     </td>
                                                     <td class="text-center">
                                                         <input type="checkbox" name="hak_edit[{{ $menu->id_menu }}]"
                                                             id="hak_edit_{{ $menu->id_menu }}"
-                                                            {{ isset($dataAkses[$menu->id_menu]['hak_edit']) && $dataAkses[$menu->id_menu]['hak_edit'] == 1 ? 'checked' : '' }}>
+                                                            {{ isset($dataAkses[$menu->id_menu]['hak_edit']) && $dataAkses[$menu->id_menu]['hak_edit'] == 1 ? 'checked' : '' }}
+                                                            {{ !isset($dataAkses[$menu->id_menu]) ? 'disabled' : '' }}>
                                                     </td>
                                                     <td class="text-center">
                                                         <input type="checkbox" name="hak_delete[{{ $menu->id_menu }}]"
                                                             id="hak_delete_{{ $menu->id_menu }}"
-                                                            {{ isset($dataAkses[$menu->id_menu]['hak_delete']) && $dataAkses[$menu->id_menu]['hak_delete'] == 1 ? 'checked' : '' }}>
+                                                            {{ isset($dataAkses[$menu->id_menu]['hak_delete']) && $dataAkses[$menu->id_menu]['hak_delete'] == 1 ? 'checked' : '' }}
+                                                            {{ !isset($dataAkses[$menu->id_menu]) ? 'disabled' : '' }}>
                                                     </td>
                                                 @else
                                                     <td class="text-center"></td>
@@ -87,23 +91,27 @@
                                                         <td class="text-center">
                                                             <input type="checkbox" name="melihat[{{ $submenu->id_menu }}]"
                                                                 id="melihat_{{ $submenu->id_menu }}"
-                                                                {{ isset($dataAkses[$submenu->id_menu]['melihat']) && $dataAkses[$submenu->id_menu]['melihat'] == 1 ? 'checked' : '' }}>
+                                                                {{ isset($dataAkses[$submenu->id_menu]) ? 'checked' : '' }}
+                                                                onchange="toggleCheckboxes({{ $submenu->id_menu }})">
                                                         </td>
                                                         <td class="text-center">
                                                             <input type="checkbox" name="hak_add[{{ $submenu->id_menu }}]"
                                                                 id="hak_add_{{ $submenu->id_menu }}"
-                                                                {{ isset($dataAkses[$submenu->id_menu]['hak_add']) && $dataAkses[$submenu->id_menu]['hak_add'] == 1 ? 'checked' : '' }}>
+                                                                {{ isset($dataAkses[$submenu->id_menu]['hak_add']) && $dataAkses[$submenu->id_menu]['hak_add'] == 1 ? 'checked' : '' }}
+                                                                {{ !isset($dataAkses[$submenu->id_menu]) ? 'disabled' : '' }}>
                                                         </td>
                                                         <td class="text-center">
                                                             <input type="checkbox" name="hak_edit[{{ $submenu->id_menu }}]"
                                                                 id="hak_edit_{{ $submenu->id_menu }}"
-                                                                {{ isset($dataAkses[$submenu->id_menu]['hak_edit']) && $dataAkses[$submenu->id_menu]['hak_edit'] == 1 ? 'checked' : '' }}>
+                                                                {{ isset($dataAkses[$submenu->id_menu]['hak_edit']) && $dataAkses[$submenu->id_menu]['hak_edit'] == 1 ? 'checked' : '' }}
+                                                                {{ !isset($dataAkses[$submenu->id_menu]) ? 'disabled' : '' }}>
                                                         </td>
                                                         <td class="text-center">
                                                             <input type="checkbox"
                                                                 name="hak_delete[{{ $submenu->id_menu }}]"
                                                                 id="hak_delete_{{ $submenu->id_menu }}"
-                                                                {{ isset($dataAkses[$submenu->id_menu]['hak_delete']) && $dataAkses[$submenu->id_menu]['hak_delete'] == 1 ? 'checked' : '' }}>
+                                                                {{ isset($dataAkses[$submenu->id_menu]['hak_delete']) && $dataAkses[$submenu->id_menu]['hak_delete'] == 1 ? 'checked' : '' }}
+                                                                {{ !isset($dataAkses[$submenu->id_menu]) ? 'disabled' : '' }}>
                                                         </td>
                                                     </tr>
                                                 @endforeach
@@ -123,3 +131,22 @@
         </div>
     </div>
 @endsection
+<script>
+    function toggleCheckboxes(menuId) {
+        const melihatCheckbox = document.getElementById(`melihat_${menuId}`);
+        const addCheckbox = document.getElementById(`hak_add_${menuId}`);
+        const editCheckbox = document.getElementById(`hak_edit_${menuId}`);
+        const deleteCheckbox = document.getElementById(`hak_delete_${menuId}`);
+
+        const isChecked = melihatCheckbox.checked;
+        addCheckbox.disabled = !isChecked;
+        editCheckbox.disabled = !isChecked;
+        deleteCheckbox.disabled = !isChecked;
+
+        if (!isChecked) {
+            addCheckbox.checked = false;
+            editCheckbox.checked = false;
+            deleteCheckbox.checked = false;
+        }
+    }
+</script>
