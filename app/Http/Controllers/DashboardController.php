@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\db_pegawai;
 use App\Models\db_menu;
+use Illuminate\Http\Request;
 use App\Models\db_user_akses;
 use App\Models\db_user_level;
 use App\Models\db_user_level_akses;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -81,6 +83,155 @@ class DashboardController extends Controller
         return redirect()->route('login');
     }
 
+    public function inputUser()
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $levelAkses = $sidebar['levelAkses'];
+        $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 3)->get();
+
+        $dataUsers = User::all();
+        return view('user.user admin.index', compact('menus', 'menuIds', 'dataUsers', 'dataAkses'));
+    }
+
+    public function inputUserCreate()
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $userLevels = db_user_level::all();
+
+        return view('user.user admin.add', compact('menus', 'menuIds', 'userLevels'));
+    }
+
+    public function inputUserStore(Request $request)
+    {
+        $request->validate([
+            'nama_user' => 'required',
+            'email_user' => 'required|email',
+            'password_user' => 'required|min:8',
+            'level' => 'required|exists:db_user_level,id_level',
+            'status' => 'required|boolean',
+            'hp_user' => 'required|numeric',
+        ]);
+        $user = User::create([
+            'nama_user' => $request->nama_user,
+            'email_user' => $request->email_user,
+            'hp_user' => $request->hp_user,
+            'password_user' => bcrypt($request->password_user),
+            'status' => $request->status,
+        ]);
+        $id_user = $user->id_user;
+        $levelAkses = db_user_level_akses::create([
+            'id_user' => $id_user,
+            'jenis_user' => $request->level,
+            'id_level' => $request->level,
+            'status' => $request->status,
+            'id_pegawai' => 0
+        ]);
+
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $dataUsers = User::all();
+
+        return redirect()->route('inputUser', compact('menus', 'menuIds', 'dataUsers'));
+    }
+
+    public function inputUserEdit($id)
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $user = User::find($id);
+        $userLevels = db_user_level::all();
+
+        return view('user.user admin.edit', compact('menus', 'menuIds', 'user', 'userLevels'));
+    }
+
+    public function inputUserUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'nama_user' => 'required',
+            'email_user' => 'required|email',
+            'password_user' => 'required|min:8',
+            'level' => 'required|exists:db_user_level,id_level',
+            'status' => 'required|boolean',
+            'hp_user' => 'required|numeric',
+        ]);
+
+        $user = User::find($id);
+        $user->update([
+            'nama_user' => $request->nama_user,
+            'email_user' => $request->email_user,
+            'hp_user' => $request->hp_user,
+            'password_user' => bcrypt($request->password_user),
+            'status' => $request->status,
+        ]);
+        $levelAkses = db_user_level_akses::where('id_user', $id)->first();
+        $levelAkses->update([
+            'id_user' => $id,
+            'jenis_user' => $request->level,
+            'id_level' => $request->level,
+            'status' => $request->status,
+            'id_pegawai' => 0
+        ]);
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $dataUsers = User::all();
+
+        return redirect()->route('inputUser', compact('menus', 'menuIds', 'dataUsers'));
+    }
+
+    public function inputUserDelete($id)
+    {
+        $user = User::find($id);
+        $levelAkses = db_user_level_akses::where('id_user', $id)->first();
+        $levelAkses->delete();
+        $user->delete();
+
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $dataUsers = User::all();
+        return redirect()->route('inputUser', compact('menus', 'menuIds', 'dataUsers'));
+    }
+
     public function menuLevelUser()
     {
         $sidebar = [];
@@ -100,7 +251,12 @@ class DashboardController extends Controller
 
     public function menuLevelUserCreate()
     {
-        $sidebar = $this->getMenuSidebar('web', 'user');
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
@@ -145,18 +301,28 @@ class DashboardController extends Controller
             }
         }
 
-        $sidebar = $this->getMenuSidebar('web', 'user');
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
         $userLevels = db_user_level::all();
 
-        return redirect()->route('admin.levelUser', compact('menus', 'menuIds', 'userLevels'));
+        return redirect()->route('levelUser', compact('menus', 'menuIds', 'userLevels'));
     }
 
     public function menuLevelUserEdit($id)
     {
-        $sidebar = $this->getMenuSidebar('web', 'user');
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
@@ -217,13 +383,18 @@ class DashboardController extends Controller
             }
         }
 
-        $sidebar = $this->getMenuSidebar('web', 'user');
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
         $userLevels = db_user_level::all();
 
-        return redirect()->route('admin.levelUser', compact('menus', 'menuIds', 'userLevels'));
+        return redirect()->route('levelUser', compact('menus', 'menuIds', 'userLevels'));
     }
     public function menuLevelUserDelete($id)
     {
@@ -238,12 +409,166 @@ class DashboardController extends Controller
         $level = db_user_level::find($id);
         $level->delete();
 
-        $sidebar = $this->getMenuSidebar('web', 'user');
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
         $userLevels = db_user_level::all();
 
-        return redirect()->route('admin.levelUser', compact('menus', 'menuIds', 'userLevels'));
+        return redirect()->route('levelUser', compact('menus', 'menuIds', 'userLevels'));
+    }
+
+    public function inputPegawai()
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $levelAkses = $sidebar['levelAkses'];
+        $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 3)->get();
+
+        $dataPegawai = db_pegawai::all();
+        return view('user.level akses pegawai.index', compact('menus', 'menuIds', 'dataPegawai', 'dataAkses'));
+    }
+
+    public function inputPegawaiCreate()
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $userLevels = db_user_level::all();
+
+        return view('user.level akses pegawai.add', compact('menus', 'menuIds', 'userLevels'));
+    }
+
+    public function inputPegawaiStore(Request $request)
+    {
+        $request->validate([
+            'nama_pegawai' => 'required',
+            'email_pegawai' => 'required|email',
+            'password_pegawai' => 'required|min:8',
+            'level' => 'required|exists:db_user_level,id_level',
+            'status' => 'required|boolean',
+            'hp_pegawai' => 'required|numeric',
+        ]);
+        $pegawai = db_pegawai::create([
+            'nama_pegawai' => $request->nama_pegawai,
+            'email_pegawai' => $request->email_pegawai,
+            'hp_pegawai' => $request->hp_pegawai,
+            'password_pegawai' => bcrypt($request->password_pegawai),
+            'status' => $request->status,
+        ]);
+        $id_pegawai = $pegawai->id_pegawai;
+        $levelAkses = db_user_level_akses::create([
+            'id_pegawai' => $id_pegawai,
+            'jenis_user' => $request->level,
+            'id_level' => $request->level,
+            'status' => $request->status,
+            'id_user' => 0
+        ]);
+
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $dataPegawai = db_pegawai::all();
+
+        return redirect()->route('inputPegawai', compact('menus', 'menuIds', 'dataPegawai'));
+    }
+
+    public function inputPegawaiEdit($id)
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $pegawai = db_pegawai::find($id);
+        $userLevels = db_user_level::all();
+
+        return view('user.level akses pegawai.edit', compact('menus', 'menuIds', 'pegawai', 'userLevels'));
+    }
+
+    public function inputPegawaiUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'nama_pegawai' => 'required',
+            'email_pegawai' => 'required|email',
+            'password_pegawai' => 'required|min:8',
+            'level' => 'required|exists:db_user_level,id_level',
+            'status' => 'required|boolean',
+            'hp_pegawai' => 'required|numeric',
+        ]);
+
+        $pegawai = db_pegawai::find($id);
+        $pegawai->update([
+            'nama_pegawai' => $request->nama_pegawai,
+            'email_pegawai' => $request->email_pegawai,
+            'hp_pegawai' => $request->hp_pegawai,
+            'password_pegawai' => bcrypt($request->password_pegawai),
+            'status' => $request->status,
+        ]);
+        $levelAkses = db_user_level_akses::where('id_pegawai', $id)->first();
+        $levelAkses->update([
+            'id_pegawai' => $id,
+            'jenis_user' => $request->level,
+            'id_level' => $request->level,
+            'status' => $request->status,
+            'id_user' => 0
+        ]);
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $dataPegawai = db_pegawai::all();
+
+        return redirect()->route('inputPegawai', compact('menus', 'menuIds', 'dataPegawai'));
+    }
+
+    public function inputPegawaiDelete($id)
+    {
+        $pegawai = db_pegawai::find($id);
+        $levelAkses = db_user_level_akses::where('id_pegawai', $id)->first();
+        $levelAkses->delete();
+        $pegawai->delete();
+
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $dataPegawai = db_pegawai::all();
+        return redirect()->route('inputPegawai', compact('menus', 'menuIds', 'dataPegawai'));
     }
 }

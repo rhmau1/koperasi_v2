@@ -12,7 +12,7 @@
                     </div>
                 </div>
                 <div class="widget-content widget-content-area">
-                    <form action="{{ route('admin.levelUser.store') }}" method="POST">
+                    <form action="{{ route('levelUser.store') }}" method="POST">
                         @csrf
                         <div class="row mb-3">
                             <label for="namaLevel" class="col-sm-2 col-form-label">Nama Level</label>
@@ -101,7 +101,7 @@
                                 </table>
                             </div>
                         </div>
-                        <a href="{{ route('admin.levelUser') }}" type="button" class="btn btn-primary">Kembali</a>
+                        <a href="{{ route('levelUser') }}" type="button" class="btn btn-primary">Kembali</a>
                         <button type="submit" class="btn btn-success">Simpan</button>
                     </form>
                 </div>

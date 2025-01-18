@@ -15,7 +15,7 @@
                         <div class="table-responsive mb-4">
                             @foreach ($dataAkses as $akses)
                                 @if ($akses->hak_add == 1)
-                                    <a href="{{ route('levelUser.create') }}" class="btn btn-primary ml-3 mb-4">+
+                                    <a href="{{ route('inputPegawai.create') }}" class="btn btn-primary ml-3 mb-4">+
                                         Tambah
                                         Data</a>
                                 @endif
@@ -23,18 +23,22 @@
                                     <thead>
                                         <tr>
                                             <th class="checkbox-column text-center"> No </th>
-                                            <th>Nama level</th>
+                                            <th>Nama pegawai</th>
+                                            <th>Email pegawai</th>
+                                            <th>HP pegawai</th>
                                             <th class="text-center">Status</th>
                                             <th class="text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($userLevels as $key => $level)
+                                        @foreach ($dataPegawai as $key => $pegawai)
                                             <tr>
                                                 <td class="checkbox-column text-center"> {{ $key + 1 }} </td>
-                                                <td>{{ $level->nama_level }}</td>
+                                                <td>{{ $pegawai->nama_pegawai }}</td>
+                                                <td>{{ $pegawai->email_pegawai }}</td>
+                                                <td>{{ $pegawai->hp_pegawai }}</td>
 
-                                                @if ($level->status == 1)
+                                                @if ($pegawai->status == 1)
                                                     <td class="text-center">
                                                         <span class="shadow-none badge badge-primary">Aktif</span>
                                                     </td>
@@ -48,7 +52,7 @@
                                                     <div class="btn-group" role="group">
                                                         <!-- Tombol Edit -->
                                                         @if ($akses->hak_edit == 1)
-                                                            <a href="{{ route('levelUser.edit', $level->id_level) }}"
+                                                            <a href="{{ route('inputPegawai.edit', $pegawai->id_pegawai) }}"
                                                                 class="btn btn-success btn-sm bs-tooltip"
                                                                 data-toggle="tooltip" data-placement="top" title="Edit">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16"
@@ -64,32 +68,29 @@
                                                         @endif
 
                                                         <!-- Tombol Delete -->
-                                                        @if ($level->id_level > 4 || $level->id_level < 1)
-                                                            @if ($akses->hak_delete == 1)
-                                                                <form
-                                                                    action="{{ route('levelUser.delete', $level->id_level) }}"
-                                                                    method="POST" style="display:inline;">
-                                                                    @csrf
-                                                                    @method('DELETE')
-                                                                    <button type="submit"
-                                                                        class="btn btn-danger btn-sm bs-tooltip"
-                                                                        data-toggle="tooltip" data-placement="top"
-                                                                        onclick="return confirm('Apakah Anda yakin ingin menghapus level {{ $level->nama_level }} ini?');"
-                                                                        title="Delete">
-                                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                                            width="16" height="16"
-                                                                            viewBox="0 0 24 24" fill="none"
-                                                                            stroke="currentColor" stroke-width="2"
-                                                                            stroke-linecap="round" stroke-linejoin="round">
-                                                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                                                            <path
-                                                                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                                                            </path>
-                                                                        </svg>
-                                                                        Delete
-                                                                    </button>
-                                                                </form>
-                                                            @endif
+                                                        @if ($akses->hak_delete == 1)
+                                                            <form
+                                                                action="{{ route('inputPegawai.delete', $pegawai->id_pegawai) }}"
+                                                                method="POST" style="display:inline;">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit"
+                                                                    class="btn btn-danger btn-sm bs-tooltip"
+                                                                    data-toggle="tooltip" data-placement="top"
+                                                                    onclick="return confirm('Apakah Anda yakin ingin menghapus pegawai {{ $pegawai->nama_pegawai }} ini?');"
+                                                                    title="Delete">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                                                        height="16" viewBox="0 0 24 24" fill="none"
+                                                                        stroke="currentColor" stroke-width="2"
+                                                                        stroke-linecap="round" stroke-linejoin="round">
+                                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                                        <path
+                                                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                                                        </path>
+                                                                    </svg>
+                                                                    Delete
+                                                                </button>
+                                                            </form>
                                                         @endif
                                                     </div>
                                                 </td>

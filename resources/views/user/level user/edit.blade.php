@@ -12,7 +12,7 @@
                     </div>
                 </div>
                 <div class="widget-content widget-content-area">
-                    <form action="{{ route('admin.levelUser.update', $dataLevel->id_level) }}" method="POST">
+                    <form action="{{ route('levelUser.update', $dataLevel->id_level) }}" method="POST">
                         @csrf
                         @method('PUT')
 
@@ -122,7 +122,7 @@
                             </div>
                         </div>
 
-                        <a href="{{ route('admin.levelUser') }}" type="button" class="btn btn-primary">Kembali</a>
+                        <a href="{{ route('levelUser') }}" type="button" class="btn btn-primary">Kembali</a>
                         <button type="submit" class="btn btn-success">Simpan</button>
                     </form>
 
