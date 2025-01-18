@@ -398,17 +398,18 @@ class DashboardController extends Controller
     }
     public function menuLevelUserDelete($id)
     {
-        $allMenu = db_menu::all();
-        foreach ($allMenu as $menu) {
-            $id_menu = $menu->id_menu;
-            $akses = db_user_akses::where('id_level', $id)->where('id_menu', $id_menu)->first();
-            if ($akses) {
-                $akses->delete();
+        if ($id < 1 || $id > 4) {
+            $allMenu = db_menu::all();
+            foreach ($allMenu as $menu) {
+                $id_menu = $menu->id_menu;
+                $akses = db_user_akses::where('id_level', $id)->where('id_menu', $id_menu)->first();
+                if ($akses) {
+                    $akses->delete();
+                }
             }
+            $level = db_user_level::find($id);
+            $level->delete();
         }
-        $level = db_user_level::find($id);
-        $level->delete();
-
         $sidebar = [];
         if (Auth::guard('web')->check()) {
             $sidebar = $this->getMenuSidebar('web', 'user');
