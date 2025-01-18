@@ -16,7 +16,7 @@
                             </svg>
                             <span>{{ $menu->nama_menu }}</span>
                         </div>
-                        @if ($menu->subMenus->isNotEmpty())
+                        @if ($menu->subMenus->whereIn('id_menu', $menuIds)->isNotEmpty())
                             <div>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -27,12 +27,12 @@
                             </div>
                         @endif
                     </a>
-                    @if ($menu->subMenus->isNotEmpty())
+                    @if ($menu->subMenus->whereIn('id_menu', $menuIds)->isNotEmpty())
                         <ul class="collapse submenu list-unstyled" id="{{ $menu->page }}"
                             data-parent="#accordionExample">
-                            @foreach ($menu->subMenus as $submenu)
+                            @foreach ($menu->subMenus->whereIn('id_menu', $menuIds) as $submenu)
                                 <li>
-                                    <a href="{{ url('dashboard/admin/' . $menu->page . '/' . $submenu->page) }}">
+                                    <a href="{{ url('dashboard/' . $menu->page . '/' . $submenu->page) }}">
                                         {{ $submenu->nama_menu }}
                                     </a>
                                 </li>

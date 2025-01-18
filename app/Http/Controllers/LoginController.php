@@ -34,8 +34,7 @@ class LoginController extends Controller
         }
 
         Auth::guard($guard)->login($user);
-        $dashboardRoute = $levelKey === 'user' ? 'admin.dashboard' : 'pegawai.dashboard';
-        return redirect()->route($dashboardRoute);
+        return redirect()->route('dashboard');
     }
 
     public function login(Request $request)

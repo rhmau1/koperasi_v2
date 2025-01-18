@@ -12,69 +12,99 @@ use Illuminate\Support\Facades\Auth;
 class DashboardController extends Controller
 {
 
-    public function dashboardAdmin()
+    function getMenuSidebar($guard, $level)
     {
-        $userId = Auth::guard('web')->id();
+        $userId = Auth::guard($guard)->id();
 
+        // Ambil level akses berdasarkan user yang login
         $levelAkses = db_user_level_akses::with('level.userAkses.menu')
-            ->where("id_user", $userId)
+            ->where("id_{$level}", $userId)
             ->first();
-        $menus = $levelAkses->level->userAkses
+
+        if (!$levelAkses) {
+            return [
+                'menus' => collect(),
+                'menuIds' => []
+            ];
+        }
+
+        // Ambil ID menu yang diakses user
+        $userAccessMenus = $levelAkses->level->userAkses
             ->pluck('menu')
             ->flatten()
-            ->where('sub_id_menu', 0)
-            ->sortBy('urutan');
+            ->pluck('id_menu')
+            ->toArray();
 
-        return view('dashboard.admin.index', compact('menus'));
+        // Ambil submenu dan parent menu terkait
+        $subMenus = db_menu::whereIn('id_menu', $userAccessMenus)
+            ->where('sub_id_menu', '!=', 0)
+            ->get();
+
+        $parentMenus = db_menu::whereIn('id_menu', $subMenus->pluck('sub_id_menu'))
+            ->pluck('id_menu')
+            ->toArray();
+
+        // Gabungkan semua ID menu
+        $allMenus = collect(array_merge($userAccessMenus, $parentMenus))
+            ->unique()
+            ->sort()
+            ->values();
+
+        // Ambil data menu berdasarkan ID dan sub_id_menu = 0
+        $menus = db_menu::whereIn('id_menu', $allMenus)
+            ->where('sub_id_menu', 0)
+            ->orderBy('urutan')
+            ->get();
+
+        return [
+            'menus' => $menus,
+            'menuIds' => $allMenus,
+            'levelAkses' => $levelAkses
+        ];
     }
-    public function dashboardPegawai()
-    {
-        $pegawaiId = Auth::guard('pegawai')->id();
 
-        $levelAkses = db_user_level_akses::with('level.userAkses.menu')
-            ->where("id_pegawai", $pegawaiId)
-            ->first();
-        $menus = $levelAkses->level->userAkses
-            ->pluck('menu')
-            ->flatten()
-            ->where('sub_id_menu', 0)
-            ->sortBy('urutan');
-        return view('dashboard.pegawai.index', compact('menus'));
+    public function dashboard()
+    {
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+            $menus = $sidebar['menus'];
+            $menuIds = $sidebar['menuIds'];
+
+            return view('dashboard.admin.index', compact('menus', 'menuIds'));
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+            $menus = $sidebar['menus'];
+            $menuIds = $sidebar['menuIds'];
+            return view('dashboard.pegawai.index', compact('menus', 'menuIds'));
+        }
+
+        return redirect()->route('login');
     }
 
     public function menuLevelUser()
     {
-        $userId = Auth::guard('web')->id();
-
-        $levelAkses = db_user_level_akses::with('level.userAkses.menu')
-            ->where("id_user", $userId)
-            ->first();
-        $menus = $levelAkses->level->userAkses
-            ->pluck('menu')
-            ->flatten()
-            ->where('sub_id_menu', 0)
-            ->sortBy('urutan');
-
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $levelAkses = $sidebar['levelAkses'];
         $userLevels = db_user_level::all();
         $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 4)->get();
 
-        return view('user.level user.index', compact('menus', 'userLevels', 'dataAkses'));
+        return view('user.level user.index', compact('menus', 'menuIds', 'userLevels', 'dataAkses'));
     }
 
     public function menuLevelUserCreate()
     {
-        $userId = Auth::guard('web')->id();
+        $sidebar = $this->getMenuSidebar('web', 'user');
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
 
-        $levelAkses = db_user_level_akses::with('level.userAkses.menu')
-            ->where("id_user", $userId)
-            ->first();
-        $menus = $levelAkses->level->userAkses
-            ->pluck('menu')
-            ->flatten()
-            ->where('sub_id_menu', 0)
-            ->sortBy('urutan');
-
-        return view('user.level user.add', compact('menus'));
+        return view('user.level user.add', compact('menus', 'menuIds'));
     }
 
     public function menuLevelUserStore(Request $request)
@@ -115,38 +145,24 @@ class DashboardController extends Controller
             }
         }
 
-        $userId = Auth::guard('web')->id();
-
-        $levelAkses = db_user_level_akses::with('level.userAkses.menu')
-            ->where("id_user", $userId)
-            ->first();
-        $menus = $levelAkses->level->userAkses
-            ->pluck('menu')
-            ->flatten()
-            ->where('sub_id_menu', 0)
-            ->sortBy('urutan');
+        $sidebar = $this->getMenuSidebar('web', 'user');
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
 
         $userLevels = db_user_level::all();
 
-        return redirect()->route('admin.levelUser', compact('menus', 'userLevels'));
+        return redirect()->route('admin.levelUser', compact('menus', 'menuIds', 'userLevels'));
     }
 
     public function menuLevelUserEdit($id)
     {
-        $userId = Auth::guard('web')->id();
-
-        $levelAkses = db_user_level_akses::with('level.userAkses.menu')
-            ->where("id_user", $userId)
-            ->first();
-        $menus = $levelAkses->level->userAkses
-            ->pluck('menu')
-            ->flatten()
-            ->where('sub_id_menu', 0)
-            ->sortBy('urutan');
+        $sidebar = $this->getMenuSidebar('web', 'user');
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
 
         $dataLevel = db_user_level::where('id_level', $id)->first();
         $dataAkses = db_user_akses::where('id_level', $id)->get()->keyBy('id_menu');
-        return view('user.level user.edit', compact('menus', 'dataLevel', 'dataAkses'));
+        return view('user.level user.edit', compact('menus', 'menuIds', 'dataLevel', 'dataAkses'));
     }
 
     public function menuLevelUserUpdate(Request $request, $id)
@@ -201,20 +217,13 @@ class DashboardController extends Controller
             }
         }
 
-        $userId = Auth::guard('web')->id();
-
-        $levelAkses = db_user_level_akses::with('level.userAkses.menu')
-            ->where("id_user", $userId)
-            ->first();
-        $menus = $levelAkses->level->userAkses
-            ->pluck('menu')
-            ->flatten()
-            ->where('sub_id_menu', 0)
-            ->sortBy('urutan');
+        $sidebar = $this->getMenuSidebar('web', 'user');
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
 
         $userLevels = db_user_level::all();
 
-        return redirect()->route('admin.levelUser', compact('menus', 'userLevels'));
+        return redirect()->route('admin.levelUser', compact('menus', 'menuIds', 'userLevels'));
     }
     public function menuLevelUserDelete($id)
     {
@@ -229,19 +238,12 @@ class DashboardController extends Controller
         $level = db_user_level::find($id);
         $level->delete();
 
-        $userId = Auth::guard('web')->id();
-
-        $levelAkses = db_user_level_akses::with('level.userAkses.menu')
-            ->where("id_user", $userId)
-            ->first();
-        $menus = $levelAkses->level->userAkses
-            ->pluck('menu')
-            ->flatten()
-            ->where('sub_id_menu', 0)
-            ->sortBy('urutan');
+        $sidebar = $this->getMenuSidebar('web', 'user');
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
 
         $userLevels = db_user_level::all();
 
-        return redirect()->route('admin.levelUser', compact('menus', 'userLevels'));
+        return redirect()->route('admin.levelUser', compact('menus', 'menuIds', 'userLevels'));
     }
 }
