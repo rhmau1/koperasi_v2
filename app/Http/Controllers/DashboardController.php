@@ -200,7 +200,7 @@ class DashboardController extends Controller
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
-        $userLevels = db_user_level::all();
+        $userLevels = db_user_level::all()->whereNotIn('id_level', [3, 4]);
 
         return view('user.user admin.add', compact('menus', 'menuIds', 'userLevels'));
     }
@@ -256,7 +256,7 @@ class DashboardController extends Controller
         $menuIds = $sidebar['menuIds'];
 
         $user = User::find($id);
-        $userLevels = db_user_level::all();
+        $userLevels = db_user_level::all()->whereNotIn('id_level', [3, 4]);
 
         return view('user.user admin.edit', compact('menus', 'menuIds', 'user', 'userLevels'));
     }
@@ -543,7 +543,7 @@ class DashboardController extends Controller
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
-        $userLevels = db_user_level::all();
+        $userLevels = db_user_level::whereNot('id_level', 1)->get();
 
         return view('pegawai.add', compact('menus', 'menuIds', 'userLevels'));
     }
@@ -599,7 +599,7 @@ class DashboardController extends Controller
         $menuIds = $sidebar['menuIds'];
 
         $pegawai = db_pegawai::find($id);
-        $userLevels = db_user_level::all();
+        $userLevels = db_user_level::whereNot('id_level', 1)->get();
 
         return view('pegawai.edit', compact('menus', 'menuIds', 'pegawai', 'userLevels'));
     }

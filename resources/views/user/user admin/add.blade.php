@@ -52,7 +52,8 @@
                             <div class="col-sm-10">
                                 <select class="form-control basic" name="level">
                                     @foreach ($userLevels as $level)
-                                        <option value="{{ $level->id_level }}">{{ $level->nama_level }}</option>
+                                        <option value="{{ $level->id_level }}"
+                                            {{ $level->id_level == 2 ? 'selected' : '' }}>{{ $level->nama_level }}</option>
                                     @endforeach
                                 </select>
                             </div>
