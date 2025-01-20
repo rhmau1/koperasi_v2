@@ -49,7 +49,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($menus as $menu)
+                                        @foreach ($allMenu as $menu)
                                             <tr>
                                                 <td>{{ $menu->nama_menu }}</td>
                                                 @if ($menu->subMenus->isEmpty())

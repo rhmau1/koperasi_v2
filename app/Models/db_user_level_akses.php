@@ -16,6 +16,7 @@ class db_user_level_akses extends Model
         'id_user_level_akses',
         'jenis_user',
         'id_user',
+        'id_anggota',
         'id_pegawai',
         'id_level',
         'status',

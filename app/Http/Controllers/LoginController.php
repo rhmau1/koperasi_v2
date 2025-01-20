@@ -27,14 +27,14 @@ class LoginController extends Controller
             ])->withInput();
         }
 
-        if ($levelAkses->status != 1) {
-            return back()->withErrors([
-                'email' => 'Level akses tidak valid.',
-            ])->withInput();
-        }
+        // if ($levelAkses->status != 1) {
+        //     return back()->withErrors([
+        //         'email' => 'Level akses tidak valid.',
+        //     ])->withInput();
+        // }
 
         Auth::guard($guard)->login($user);
-        return redirect()->route('dashboard');
+        return redirect()->route('pilihRole');
     }
 
     public function login(Request $request)
@@ -78,5 +78,62 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login')->with('status', 'Anda telah keluar sebagai pegawai.');
+    }
+
+    public function pilihRole()
+    {
+        $userId = '';
+        $userLevels = [];
+        if (Auth::guard('web')->check()) {
+            $userId = Auth::guard('web')->id();
+            $userLevels = db_user_level_akses::where('id_user', $userId)->get();
+        } elseif (Auth::guard('pegawai')->check()) {
+            $userId = Auth::guard('pegawai')->id();
+            $userLevels = db_user_level_akses::where('id_pegawai', $userId)->get();
+        }
+        return view('auth.pilih-role', compact('userLevels'));
+    }
+
+    public function pilihRoleUpdate($id)
+    {
+        $userId = '';
+        $userLevels = [];
+        $level = db_user_level_akses::where('id_level', $id)->first();
+        if (Auth::guard('web')->check()) {
+            $userId = Auth::guard('web')->id();
+            $userLevels = db_user_level_akses::where('id_user', $userId)
+                ->where('status', 1)
+                ->first();
+        } elseif (Auth::guard('pegawai')->check()) {
+            $userId = Auth::guard('pegawai')->id();
+            $userLevels = db_user_level_akses::where('id_pegawai', $userId)
+                ->where('status', 1)
+                ->first();
+        }
+        if ($id != $userLevels->id_level) {
+            $userLevels->update([
+                'status' => 0
+            ]);
+            if (Auth::guard('web')->check()) {
+                $level->update([
+                    'id_user' => $userId,
+                    'id_level' => $id,
+                    'jenis_user' => $id,
+                    'id_pegawai' => 0,
+                    'id_anggota' => 0,
+                    'status' => 1
+                ]);
+            } elseif (Auth::guard('pegawai')->check()) {
+                $level->update([
+                    'id_user' => 0,
+                    'id_level' => $id,
+                    'jenis_user' => $id,
+                    'id_pegawai' => $userId,
+                    'id_anggota' => 0,
+                    'status' => 1
+                ]);
+            }
+        }
+        return redirect()->route('dashboard');
     }
 }

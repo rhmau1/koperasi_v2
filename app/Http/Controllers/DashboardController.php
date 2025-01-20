@@ -83,6 +83,96 @@ class DashboardController extends Controller
         return redirect()->route('login');
     }
 
+    public function level()
+    {
+        $sidebar = [];
+        $userId = '';
+        $levelAkses = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+            $userId = Auth::guard('web')->id();
+            $levelAkses = db_user_level_akses::where('id_user', $userId)->get();
+            $levelIds = $levelAkses->pluck('id_level')->toArray();
+            $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->whereNotIn('id_level', [3, 4])->get();
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+            $userId = Auth::guard('pegawai')->id();
+            $levelAkses = db_user_level_akses::where('id_pegawai', $userId)->get();
+            $levelIds = $levelAkses->pluck('id_level')->toArray();
+            $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->whereNot('id_level', 1)->get();
+        }
+        $userLevels = db_user_level_akses::whereIn('id_level', $levelIds)->get();
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        return view('level.index', compact('menus', 'menuIds', 'userLevels', 'allLevels'));
+    }
+
+    public function levelStore(Request $request)
+    {
+        $sidebar = [];
+        $userId = '';
+        $levelAkses = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+            $userId = Auth::guard('web')->id();
+            $levelAkses = db_user_level_akses::where('id_user', $userId)->get();
+            $level = db_user_level_akses::create([
+                'id_user' => $userId,
+                'jenis_user' => $request->id_level,
+                'id_level' => $request->id_level,
+                'status' => 0,
+                'id_anggota' => 0,
+                'id_pegawai' => 0,
+            ]);
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+            $userId = Auth::guard('pegawai')->id();
+            $levelAkses = db_user_level_akses::where('id_pegawai', $userId)->get();
+            $level = db_user_level_akses::create([
+                'id_user' => 0,
+                'jenis_user' => $request->id_level,
+                'id_level' => $request->id_level,
+                'status' => 0,
+                'id_pegawai' => $userId,
+                'id_anggota' => 0
+            ]);
+        }
+        $levelIds = $levelAkses->pluck('id_level')->toArray();
+        $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->get();
+        $userLevels = db_user_level_akses::whereIn('id_level', $levelIds)->get();
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        return redirect()->route('level', compact('menus', 'menuIds', 'userLevels', 'allLevels'));
+    }
+
+    public function levelDelete($id)
+    {
+        $sidebar = [];
+        $userId = '';
+        $levelAkses = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+            $userId = Auth::guard('web')->id();
+            $levelAkses = db_user_level_akses::where('id_user', $userId)->get();
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+            $userId = Auth::guard('pegawai')->id();
+            $levelAkses = db_user_level_akses::where('id_pegawai', $userId)->get();
+        }
+        $levelIds = $levelAkses->pluck('id_level')->toArray();
+        $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->get();
+        $userLevels = db_user_level_akses::whereIn('id_level', $levelIds)->get();
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $dataRole = db_user_level_akses::where('id_level', $id)->first();
+        $dataRole->delete();
+
+        return redirect()->route('level', compact('menus', 'menuIds', 'userLevels', 'allLevels'));
+    }
+
     public function inputUser()
     {
         $sidebar = [];
@@ -259,8 +349,9 @@ class DashboardController extends Controller
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
+        $allMenu = db_menu::all()->where('sub_id_menu', 0);
 
-        return view('user.level user.add', compact('menus', 'menuIds'));
+        return view('user.level user.add', compact('menus', 'menuIds', 'allMenu'));
     }
 
     public function menuLevelUserStore(Request $request)
@@ -325,10 +416,11 @@ class DashboardController extends Controller
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
+        $allMenu = db_menu::all()->where('sub_id_menu', 0);
 
         $dataLevel = db_user_level::where('id_level', $id)->first();
         $dataAkses = db_user_akses::where('id_level', $id)->get()->keyBy('id_menu');
-        return view('user.level user.edit', compact('menus', 'menuIds', 'dataLevel', 'dataAkses'));
+        return view('user.level user.edit', compact('menus', 'menuIds', 'dataLevel', 'dataAkses', 'allMenu'));
     }
 
     public function menuLevelUserUpdate(Request $request, $id)
@@ -438,7 +530,7 @@ class DashboardController extends Controller
         $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 3)->get();
 
         $dataPegawai = db_pegawai::all();
-        return view('user.level akses pegawai.index', compact('menus', 'menuIds', 'dataPegawai', 'dataAkses'));
+        return view('pegawai.index', compact('menus', 'menuIds', 'dataPegawai', 'dataAkses'));
     }
 
     public function inputPegawaiCreate()
@@ -453,7 +545,7 @@ class DashboardController extends Controller
         $menuIds = $sidebar['menuIds'];
         $userLevels = db_user_level::all();
 
-        return view('user.level akses pegawai.add', compact('menus', 'menuIds', 'userLevels'));
+        return view('pegawai.add', compact('menus', 'menuIds', 'userLevels'));
     }
 
     public function inputPegawaiStore(Request $request)
@@ -509,7 +601,7 @@ class DashboardController extends Controller
         $pegawai = db_pegawai::find($id);
         $userLevels = db_user_level::all();
 
-        return view('user.level akses pegawai.edit', compact('menus', 'menuIds', 'pegawai', 'userLevels'));
+        return view('pegawai.edit', compact('menus', 'menuIds', 'pegawai', 'userLevels'));
     }
 
     public function inputPegawaiUpdate(Request $request, $id)
