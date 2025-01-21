@@ -15,10 +15,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 });
 // Admin routes
-Route::middleware('auth:web,pegawai')->group(function () {
+Route::middleware('auth:web,pegawai,anggota')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::post('/logout/admin', [LoginController::class, 'logoutAdmin'])->name('admin.logout');
     Route::post('/logout/pegawai', [LoginController::class, 'logoutPegawai'])->name('pegawai.logout');
+    Route::post('/logout/anggota', [LoginController::class, 'logoutAnggota'])->name('anggota.logout');
     Route::get('pilih-role', [LoginController::class, 'pilihRole'])->name('pilihRole');
     Route::put('pilih-role/{id}', [LoginController::class, 'pilihRoleUpdate'])->name('pilihRole.update');
     Route::get('dashboard/level', [DashboardController::class, 'level'])->name('level');
@@ -38,6 +39,13 @@ Route::middleware('auth:web,pegawai')->group(function () {
     Route::get('dashboard/pegawai/update/{id}', [DashboardController::class, 'inputPegawaiEdit'])->name('inputPegawai.edit');
     Route::put('dashboard/pegawai/update/{id}', [DashboardController::class, 'inputPegawaiUpdate'])->name('inputPegawai.update');
     Route::delete('dashboard/pegawai/delete/{id}', [DashboardController::class, 'inputPegawaiDelete'])->name('inputPegawai.delete');
+
+    Route::get('dashboard/anggota', [DashboardController::class, 'inputAnggota'])->name('inputAnggota');
+    Route::get('dashboard/anggota/create', [DashboardController::class, 'inputAnggotaCreate'])->name('inputAnggota.create');
+    Route::post('dashboard/anggota/create', [DashboardController::class, 'inputAnggotaStore'])->name('inputAnggota.store');
+    Route::get('dashboard/anggota/update/{id}', [DashboardController::class, 'inputAnggotaEdit'])->name('inputAnggota.edit');
+    Route::put('dashboard/anggota/update/{id}', [DashboardController::class, 'inputAnggotaUpdate'])->name('inputAnggota.update');
+    Route::delete('dashboard/anggota/delete/{id}', [DashboardController::class, 'inputAnggotaDelete'])->name('inputAnggota.delete');
 
     Route::get('dashboard/user/level-user', [DashboardController::class, 'menuLevelUser'])->name('levelUser');
     Route::get('dashboard/user/level-user/create', [DashboardController::class, 'menuLevelUserCreate'])->name('levelUser.create');

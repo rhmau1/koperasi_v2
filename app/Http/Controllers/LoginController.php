@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\db_pegawai;
+use App\Models\db_anggota;
 use App\Models\db_user_level_akses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,6 +56,10 @@ class LoginController extends Controller
         if ($userPegawai) {
             return $this->authenticateUser($userPegawai, $request->password, 'pegawai', 'pegawai');
         }
+        $userAnggota = db_anggota::where('email_anggota', $request->email)->first();
+        if ($userAnggota) {
+            return $this->authenticateUser($userAnggota, $request->password, 'anggota', 'anggota');
+        }
 
         // If no user is found
         return back()->withErrors([
@@ -79,6 +84,14 @@ class LoginController extends Controller
 
         return redirect('/login')->with('status', 'Anda telah keluar sebagai pegawai.');
     }
+    public function logoutAnggota(Request $request)
+    {
+        Auth::guard('anggota')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login')->with('status', 'Anda telah keluar sebagai anggota.');
+    }
 
     public function pilihRole()
     {
@@ -90,6 +103,9 @@ class LoginController extends Controller
         } elseif (Auth::guard('pegawai')->check()) {
             $userId = Auth::guard('pegawai')->id();
             $userLevels = db_user_level_akses::where('id_pegawai', $userId)->get();
+        } elseif (Auth::guard('anggota')->check()) {
+            $userId = Auth::guard('anggota')->id();
+            $userLevels = db_user_level_akses::where('id_anggota', $userId)->get();
         }
         return view('auth.pilih-role', compact('userLevels'));
     }
@@ -107,6 +123,11 @@ class LoginController extends Controller
         } elseif (Auth::guard('pegawai')->check()) {
             $userId = Auth::guard('pegawai')->id();
             $userLevels = db_user_level_akses::where('id_pegawai', $userId)
+                ->where('status', 1)
+                ->first();
+        } elseif (Auth::guard('anggota')->check()) {
+            $userId = Auth::guard('anggota')->id();
+            $userLevels = db_user_level_akses::where('id_anggota', $userId)
                 ->where('status', 1)
                 ->first();
         }
@@ -130,6 +151,15 @@ class LoginController extends Controller
                     'jenis_user' => $id,
                     'id_pegawai' => $userId,
                     'id_anggota' => 0,
+                    'status' => 1
+                ]);
+            } elseif (Auth::guard('anggota')->check()) {
+                $level->update([
+                    'id_user' => 0,
+                    'id_level' => $id,
+                    'jenis_user' => $id,
+                    'id_anggota' => $userId,
+                    'id_pegawai' => 0,
                     'status' => 1
                 ]);
             }

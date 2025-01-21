@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\db_pegawai;
+use App\Models\db_anggota;
 use App\Models\db_menu;
 use Illuminate\Http\Request;
 use App\Models\db_user_akses;
@@ -78,6 +79,11 @@ class DashboardController extends Controller
             $menus = $sidebar['menus'];
             $menuIds = $sidebar['menuIds'];
             return view('dashboard.pegawai.index', compact('menus', 'menuIds'));
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+            $menus = $sidebar['menus'];
+            $menuIds = $sidebar['menuIds'];
+            return view('dashboard.anggota.index', compact('menus', 'menuIds'));
         }
 
         return redirect()->route('login');
@@ -85,23 +91,30 @@ class DashboardController extends Controller
 
     public function level()
     {
-        $sidebar = [];
-        $userId = '';
-        $levelAkses = [];
+        $guard = '';
+        $level = '';
         if (Auth::guard('web')->check()) {
-            $sidebar = $this->getMenuSidebar('web', 'user');
-            $userId = Auth::guard('web')->id();
-            $levelAkses = db_user_level_akses::where('id_user', $userId)->get();
-            $levelIds = $levelAkses->pluck('id_level')->toArray();
+            $guard = 'web';
+            $level = 'user';
+        } elseif (Auth::guard('pegawai')->check()) {
+            $guard = 'pegawai';
+            $level = 'pegawai';
+        } elseif (Auth::guard('anggota')->check()) {
+            $guard = 'anggota';
+            $level = 'anggota';
+        }
+        $sidebar = $this->getMenuSidebar($guard, $level);
+        $userId = Auth::guard($guard)->id();
+        $levelAkses = db_user_level_akses::where("id_{$level}", $userId)->get();
+        $levelIds = $levelAkses->pluck('id_level')->toArray();
+        if (Auth::guard('web')->check()) {
             $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->whereNotIn('id_level', [3, 4])->get();
         } elseif (Auth::guard('pegawai')->check()) {
-            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
-            $userId = Auth::guard('pegawai')->id();
-            $levelAkses = db_user_level_akses::where('id_pegawai', $userId)->get();
-            $levelIds = $levelAkses->pluck('id_level')->toArray();
             $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->whereNot('id_level', 1)->get();
+        } elseif (Auth::guard('anggota')->check()) {
+            $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->whereNotIn('id_level', [1, 2])->get();
         }
-        $userLevels = db_user_level_akses::whereIn('id_level', $levelIds)->get();
+        $userLevels = db_user_level_akses::where("id_{$level}", $userId)->whereIn('id_level', $levelIds)->get();
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
@@ -110,14 +123,25 @@ class DashboardController extends Controller
 
     public function levelStore(Request $request)
     {
-        $sidebar = [];
-        $userId = '';
-        $levelAkses = [];
+        $guard = '';
+        $level = '';
         if (Auth::guard('web')->check()) {
-            $sidebar = $this->getMenuSidebar('web', 'user');
-            $userId = Auth::guard('web')->id();
-            $levelAkses = db_user_level_akses::where('id_user', $userId)->get();
-            $level = db_user_level_akses::create([
+            $guard = 'web';
+            $level = 'user';
+        } elseif (Auth::guard('pegawai')->check()) {
+            $guard = 'pegawai';
+            $level = 'pegawai';
+        } elseif (Auth::guard('anggota')->check()) {
+            $guard = 'anggota';
+            $level = 'anggota';
+        }
+        $sidebar = $this->getMenuSidebar($guard, $level);
+        $userId = Auth::guard($guard)->id();
+        $levelAkses = db_user_level_akses::where("id_{$level}", $userId)->get();
+
+        if (Auth::guard('web')->check()) {
+
+            db_user_level_akses::create([
                 'id_user' => $userId,
                 'jenis_user' => $request->id_level,
                 'id_level' => $request->id_level,
@@ -126,10 +150,7 @@ class DashboardController extends Controller
                 'id_pegawai' => 0,
             ]);
         } elseif (Auth::guard('pegawai')->check()) {
-            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
-            $userId = Auth::guard('pegawai')->id();
-            $levelAkses = db_user_level_akses::where('id_pegawai', $userId)->get();
-            $level = db_user_level_akses::create([
+            db_user_level_akses::create([
                 'id_user' => 0,
                 'jenis_user' => $request->id_level,
                 'id_level' => $request->id_level,
@@ -137,10 +158,19 @@ class DashboardController extends Controller
                 'id_pegawai' => $userId,
                 'id_anggota' => 0
             ]);
+        } elseif (Auth::guard('anggota')->check()) {
+            db_user_level_akses::create([
+                'id_user' => 0,
+                'jenis_user' => $request->id_level,
+                'id_level' => $request->id_level,
+                'status' => 0,
+                'id_pegawai' => 0,
+                'id_anggota' => $userId
+            ]);
         }
         $levelIds = $levelAkses->pluck('id_level')->toArray();
         $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->get();
-        $userLevels = db_user_level_akses::whereIn('id_level', $levelIds)->get();
+        $userLevels = db_user_level_akses::where("id_{$level}", $userId)->whereIn('id_level', $levelIds)->get();
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
@@ -149,21 +179,24 @@ class DashboardController extends Controller
 
     public function levelDelete($id)
     {
-        $sidebar = [];
-        $userId = '';
-        $levelAkses = [];
+        $guard = '';
+        $level = '';
         if (Auth::guard('web')->check()) {
-            $sidebar = $this->getMenuSidebar('web', 'user');
-            $userId = Auth::guard('web')->id();
-            $levelAkses = db_user_level_akses::where('id_user', $userId)->get();
+            $guard = 'web';
+            $level = 'user';
         } elseif (Auth::guard('pegawai')->check()) {
-            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
-            $userId = Auth::guard('pegawai')->id();
-            $levelAkses = db_user_level_akses::where('id_pegawai', $userId)->get();
+            $guard = 'pegawai';
+            $level = 'pegawai';
+        } elseif (Auth::guard('anggota')->check()) {
+            $guard = 'anggota';
+            $level = 'anggota';
         }
+        $sidebar = $this->getMenuSidebar($guard, $level);
+        $userId = Auth::guard($guard)->id();
+        $levelAkses = db_user_level_akses::where("id_{$level}", $userId)->get();
         $levelIds = $levelAkses->pluck('id_level')->toArray();
         $allLevels = db_user_level::whereNotIn('id_level', $levelIds)->get();
-        $userLevels = db_user_level_akses::whereIn('id_level', $levelIds)->get();
+        $userLevels = db_user_level_akses::where("id_{$level}", $userId)->whereIn('id_level', $levelIds)->get();
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
@@ -180,6 +213,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -197,6 +232,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -228,7 +265,8 @@ class DashboardController extends Controller
             'jenis_user' => $request->level,
             'id_level' => $request->level,
             'status' => $request->status,
-            'id_pegawai' => 0
+            'id_pegawai' => 0,
+            'id_anggota' => 0
         ]);
 
         $sidebar = [];
@@ -236,6 +274,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -251,6 +291,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -286,13 +328,16 @@ class DashboardController extends Controller
             'jenis_user' => $request->level,
             'id_level' => $request->level,
             'status' => $request->status,
-            'id_pegawai' => 0
+            'id_pegawai' => 0,
+            'id_anggota' => 0
         ]);
         $sidebar = [];
         if (Auth::guard('web')->check()) {
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -314,6 +359,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -329,6 +376,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -346,6 +395,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -397,6 +448,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -413,6 +466,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -480,6 +535,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -498,6 +555,10 @@ class DashboardController extends Controller
                 if ($akses) {
                     $akses->delete();
                 }
+                $levelAkses = db_user_level_akses::where('id_level', $id)->get();
+                foreach ($levelAkses as $levelAkses) {
+                    $levelAkses->delete();
+                }
             }
             $level = db_user_level::find($id);
             $level->delete();
@@ -507,6 +568,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -523,6 +586,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -540,6 +605,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -571,7 +638,8 @@ class DashboardController extends Controller
             'jenis_user' => $request->level,
             'id_level' => $request->level,
             'status' => $request->status,
-            'id_user' => 0
+            'id_user' => 0,
+            'id_anggota' => 0
         ]);
 
         $sidebar = [];
@@ -579,6 +647,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -594,6 +664,8 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -629,13 +701,16 @@ class DashboardController extends Controller
             'jenis_user' => $request->level,
             'id_level' => $request->level,
             'status' => $request->status,
-            'id_user' => 0
+            'id_user' => 0,
+            'id_anggota' => 0
         ]);
         $sidebar = [];
         if (Auth::guard('web')->check()) {
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
@@ -657,11 +732,175 @@ class DashboardController extends Controller
             $sidebar = $this->getMenuSidebar('web', 'user');
         } elseif (Auth::guard('pegawai')->check()) {
             $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
 
         $dataPegawai = db_pegawai::all();
         return redirect()->route('inputPegawai', compact('menus', 'menuIds', 'dataPegawai'));
+    }
+    public function inputAnggota()
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $levelAkses = $sidebar['levelAkses'];
+        $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 3)->get();
+
+        $dataAnggota = db_anggota::all();
+        return view('anggota.index', compact('menus', 'menuIds', 'dataAnggota', 'dataAkses'));
+    }
+
+    public function inputAnggotaCreate()
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $userLevels = db_user_level::whereNotIn('id_level', [1, 2])->get();
+
+        return view('anggota.add', compact('menus', 'menuIds', 'userLevels'));
+    }
+
+    public function inputAnggotaStore(Request $request)
+    {
+        $request->validate([
+            'nama_anggota' => 'required',
+            'email_anggota' => 'required|email',
+            'password_anggota' => 'required|min:8',
+            'level' => 'required|exists:db_user_level,id_level',
+            'status' => 'required|boolean',
+            'hp_anggota' => 'required|numeric',
+        ]);
+        $anggota = db_anggota::create([
+            'nama_anggota' => $request->nama_anggota,
+            'email_anggota' => $request->email_anggota,
+            'hp_anggota' => $request->hp_anggota,
+            'password_anggota' => bcrypt($request->password_anggota),
+            'status' => $request->status,
+        ]);
+        $id_anggota = $anggota->id_anggota;
+        $levelAkses = db_user_level_akses::create([
+            'id_anggota' => $id_anggota,
+            'jenis_user' => $request->level,
+            'id_level' => $request->level,
+            'status' => $request->status,
+            'id_user' => 0,
+            'id_pegawai' => 0
+        ]);
+
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+        $dataAnggota = db_anggota::all();
+
+        return redirect()->route('inputAnggota', compact('menus', 'menuIds', 'dataAnggota'));
+    }
+
+    public function inputAnggotaEdit($id)
+    {
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $anggota = db_anggota::find($id);
+        $userLevels = db_user_level::whereNotIn('id_level', [1, 2])->get();
+
+        return view('anggota.edit', compact('menus', 'menuIds', 'anggota', 'userLevels'));
+    }
+
+    public function inputAnggotaUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'nama_anggota' => 'required',
+            'email_anggota' => 'required|email',
+            'password_anggota' => 'required|min:8',
+            'level' => 'required|exists:db_user_level,id_level',
+            'status' => 'required|boolean',
+            'hp_anggota' => 'required|numeric',
+        ]);
+
+        $anggota = db_anggota::find($id);
+        $anggota->update([
+            'nama_anggota' => $request->nama_anggota,
+            'email_anggota' => $request->email_anggota,
+            'hp_anggota' => $request->hp_anggota,
+            'password_anggota' => bcrypt($request->password_anggota),
+            'status' => $request->status,
+        ]);
+        $levelAkses = db_user_level_akses::where('id_anggota', $id)->first();
+        $levelAkses->update([
+            'id_anggota' => $id,
+            'jenis_user' => $request->level,
+            'id_level' => $request->level,
+            'status' => $request->status,
+            'id_user' => 0,
+            'id_pegawai' => 0
+        ]);
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $dataAnggota = db_pegawai::all();
+
+        return redirect()->route('inputAnggota', compact('menus', 'menuIds', 'dataAnggota'));
+    }
+
+    public function inputAnggotaDelete($id)
+    {
+        $anggota = db_anggota::find($id);
+        $levelAkses = db_user_level_akses::where('id_anggota', $id)->first();
+        $levelAkses->delete();
+        $anggota->delete();
+
+        $sidebar = [];
+        if (Auth::guard('web')->check()) {
+            $sidebar = $this->getMenuSidebar('web', 'user');
+        } elseif (Auth::guard('pegawai')->check()) {
+            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+        } elseif (Auth::guard('anggota')->check()) {
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
+        }
+        $menus = $sidebar['menus'];
+        $menuIds = $sidebar['menuIds'];
+
+        $dataAnggota = db_anggota::all();
+        return redirect()->route('inputAnggota', compact('menus', 'menuIds', 'dataAnggota'));
     }
 }

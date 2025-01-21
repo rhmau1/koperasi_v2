@@ -37,6 +37,10 @@ class db_user_level_akses extends Model
     {
         return $this->belongsTo(db_pegawai::class, 'id_pegawai', 'id_pegawai');
     }
+    public function anggota()
+    {
+        return $this->belongsTo(db_anggota::class, 'id_anggota', 'id_anggota');
+    }
 
     public function level()
     {

@@ -45,6 +45,10 @@ return [
             'driver' => 'session',
             'provider' => 'pegawai',
         ],
+        'anggota' => [
+            'driver' => 'session',
+            'provider' => 'anggota',
+        ],
     ],
 
     /*
@@ -73,6 +77,10 @@ return [
         'pegawai' => [
             'driver' => 'eloquent',
             'model' => App\Models\db_pegawai::class,
+        ],
+        'anggota' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\db_anggota::class,
         ],
         // 'users' => [
         //     'driver' => 'database',
