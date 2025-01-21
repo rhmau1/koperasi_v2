@@ -47,17 +47,6 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="row mb-3">
-                            <label for="level" class="col-sm-2 col-form-label">Level</label>
-                            <div class="col-sm-10">
-                                <select class="form-control basic" name="level">
-                                    @foreach ($userLevels as $level)
-                                        <option value="{{ $level->id_level }}"
-                                            {{ $level->id_level == 4 ? 'selected' : '' }}>{{ $level->nama_level }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
                         <a href="{{ route('inputAnggota') }}" type="button" class="btn btn-primary">Kembali</a>
                         <button type="submit" class="btn btn-success">Simpan</button>
                     </form>

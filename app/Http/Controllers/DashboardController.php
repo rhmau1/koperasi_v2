@@ -37,7 +37,6 @@ class DashboardController extends Controller
             ->flatten()
             ->pluck('id_menu')
             ->toArray();
-
         // Ambil submenu dan parent menu terkait
         $subMenus = db_menu::whereIn('id_menu', $userAccessMenus)
             ->where('sub_id_menu', '!=', 0)
@@ -80,7 +79,7 @@ class DashboardController extends Controller
             $menuIds = $sidebar['menuIds'];
             return view('dashboard.pegawai.index', compact('menus', 'menuIds'));
         } elseif (Auth::guard('anggota')->check()) {
-            $sidebar = $this->getMenuSidebar('pegawai', 'pegawai');
+            $sidebar = $this->getMenuSidebar('anggota', 'anggota');
             $menus = $sidebar['menus'];
             $menuIds = $sidebar['menuIds'];
             return view('dashboard.anggota.index', compact('menus', 'menuIds'));
@@ -237,9 +236,8 @@ class DashboardController extends Controller
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
-        $userLevels = db_user_level::all()->whereNotIn('id_level', [3, 4]);
 
-        return view('user.user admin.add', compact('menus', 'menuIds', 'userLevels'));
+        return view('user.user admin.add', compact('menus', 'menuIds'));
     }
 
     public function inputUserStore(Request $request)
@@ -248,7 +246,6 @@ class DashboardController extends Controller
             'nama_user' => 'required',
             'email_user' => 'required|email',
             'password_user' => 'required|min:8',
-            'level' => 'required|exists:db_user_level,id_level',
             'status' => 'required|boolean',
             'hp_user' => 'required|numeric',
         ]);
@@ -262,8 +259,8 @@ class DashboardController extends Controller
         $id_user = $user->id_user;
         $levelAkses = db_user_level_akses::create([
             'id_user' => $id_user,
-            'jenis_user' => $request->level,
-            'id_level' => $request->level,
+            'jenis_user' => 2,
+            'id_level' => 2,
             'status' => $request->status,
             'id_pegawai' => 0,
             'id_anggota' => 0
@@ -298,9 +295,8 @@ class DashboardController extends Controller
         $menuIds = $sidebar['menuIds'];
 
         $user = User::find($id);
-        $userLevels = db_user_level::all()->whereNotIn('id_level', [3, 4]);
 
-        return view('user.user admin.edit', compact('menus', 'menuIds', 'user', 'userLevels'));
+        return view('user.user admin.edit', compact('menus', 'menuIds', 'user'));
     }
 
     public function inputUserUpdate(Request $request, $id)
@@ -309,7 +305,6 @@ class DashboardController extends Controller
             'nama_user' => 'required',
             'email_user' => 'required|email',
             'password_user' => 'required|min:8',
-            'level' => 'required|exists:db_user_level,id_level',
             'status' => 'required|boolean',
             'hp_user' => 'required|numeric',
         ]);
@@ -321,15 +316,6 @@ class DashboardController extends Controller
             'hp_user' => $request->hp_user,
             'password_user' => bcrypt($request->password_user),
             'status' => $request->status,
-        ]);
-        $levelAkses = db_user_level_akses::where('id_user', $id)->first();
-        $levelAkses->update([
-            'id_user' => $id,
-            'jenis_user' => $request->level,
-            'id_level' => $request->level,
-            'status' => $request->status,
-            'id_pegawai' => 0,
-            'id_anggota' => 0
         ]);
         $sidebar = [];
         if (Auth::guard('web')->check()) {
@@ -592,7 +578,7 @@ class DashboardController extends Controller
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
         $levelAkses = $sidebar['levelAkses'];
-        $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 3)->get();
+        $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 6)->get();
 
         $dataPegawai = db_pegawai::all();
         return view('pegawai.index', compact('menus', 'menuIds', 'dataPegawai', 'dataAkses'));
@@ -610,9 +596,8 @@ class DashboardController extends Controller
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
-        $userLevels = db_user_level::whereNot('id_level', 1)->get();
 
-        return view('pegawai.add', compact('menus', 'menuIds', 'userLevels'));
+        return view('pegawai.add', compact('menus', 'menuIds'));
     }
 
     public function inputPegawaiStore(Request $request)
@@ -621,7 +606,6 @@ class DashboardController extends Controller
             'nama_pegawai' => 'required',
             'email_pegawai' => 'required|email',
             'password_pegawai' => 'required|min:8',
-            'level' => 'required|exists:db_user_level,id_level',
             'status' => 'required|boolean',
             'hp_pegawai' => 'required|numeric',
         ]);
@@ -635,8 +619,8 @@ class DashboardController extends Controller
         $id_pegawai = $pegawai->id_pegawai;
         $levelAkses = db_user_level_akses::create([
             'id_pegawai' => $id_pegawai,
-            'jenis_user' => $request->level,
-            'id_level' => $request->level,
+            'jenis_user' => 3,
+            'id_level' => 3,
             'status' => $request->status,
             'id_user' => 0,
             'id_anggota' => 0
@@ -671,9 +655,8 @@ class DashboardController extends Controller
         $menuIds = $sidebar['menuIds'];
 
         $pegawai = db_pegawai::find($id);
-        $userLevels = db_user_level::whereNot('id_level', 1)->get();
 
-        return view('pegawai.edit', compact('menus', 'menuIds', 'pegawai', 'userLevels'));
+        return view('pegawai.edit', compact('menus', 'menuIds', 'pegawai'));
     }
 
     public function inputPegawaiUpdate(Request $request, $id)
@@ -682,7 +665,6 @@ class DashboardController extends Controller
             'nama_pegawai' => 'required',
             'email_pegawai' => 'required|email',
             'password_pegawai' => 'required|min:8',
-            'level' => 'required|exists:db_user_level,id_level',
             'status' => 'required|boolean',
             'hp_pegawai' => 'required|numeric',
         ]);
@@ -694,15 +676,6 @@ class DashboardController extends Controller
             'hp_pegawai' => $request->hp_pegawai,
             'password_pegawai' => bcrypt($request->password_pegawai),
             'status' => $request->status,
-        ]);
-        $levelAkses = db_user_level_akses::where('id_pegawai', $id)->first();
-        $levelAkses->update([
-            'id_pegawai' => $id,
-            'jenis_user' => $request->level,
-            'id_level' => $request->level,
-            'status' => $request->status,
-            'id_user' => 0,
-            'id_anggota' => 0
         ]);
         $sidebar = [];
         if (Auth::guard('web')->check()) {
@@ -754,7 +727,7 @@ class DashboardController extends Controller
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
         $levelAkses = $sidebar['levelAkses'];
-        $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 3)->get();
+        $dataAkses = db_user_akses::where('id_level', $levelAkses->id_level)->where('id_menu', 7)->get();
 
         $dataAnggota = db_anggota::all();
         return view('anggota.index', compact('menus', 'menuIds', 'dataAnggota', 'dataAkses'));
@@ -772,9 +745,8 @@ class DashboardController extends Controller
         }
         $menus = $sidebar['menus'];
         $menuIds = $sidebar['menuIds'];
-        $userLevels = db_user_level::whereNotIn('id_level', [1, 2])->get();
 
-        return view('anggota.add', compact('menus', 'menuIds', 'userLevels'));
+        return view('anggota.add', compact('menus', 'menuIds'));
     }
 
     public function inputAnggotaStore(Request $request)
@@ -783,7 +755,6 @@ class DashboardController extends Controller
             'nama_anggota' => 'required',
             'email_anggota' => 'required|email',
             'password_anggota' => 'required|min:8',
-            'level' => 'required|exists:db_user_level,id_level',
             'status' => 'required|boolean',
             'hp_anggota' => 'required|numeric',
         ]);
@@ -797,8 +768,8 @@ class DashboardController extends Controller
         $id_anggota = $anggota->id_anggota;
         $levelAkses = db_user_level_akses::create([
             'id_anggota' => $id_anggota,
-            'jenis_user' => $request->level,
-            'id_level' => $request->level,
+            'jenis_user' => 4,
+            'id_level' => 4,
             'status' => $request->status,
             'id_user' => 0,
             'id_pegawai' => 0
@@ -833,9 +804,8 @@ class DashboardController extends Controller
         $menuIds = $sidebar['menuIds'];
 
         $anggota = db_anggota::find($id);
-        $userLevels = db_user_level::whereNotIn('id_level', [1, 2])->get();
 
-        return view('anggota.edit', compact('menus', 'menuIds', 'anggota', 'userLevels'));
+        return view('anggota.edit', compact('menus', 'menuIds', 'anggota'));
     }
 
     public function inputAnggotaUpdate(Request $request, $id)
@@ -844,7 +814,6 @@ class DashboardController extends Controller
             'nama_anggota' => 'required',
             'email_anggota' => 'required|email',
             'password_anggota' => 'required|min:8',
-            'level' => 'required|exists:db_user_level,id_level',
             'status' => 'required|boolean',
             'hp_anggota' => 'required|numeric',
         ]);
@@ -856,15 +825,6 @@ class DashboardController extends Controller
             'hp_anggota' => $request->hp_anggota,
             'password_anggota' => bcrypt($request->password_anggota),
             'status' => $request->status,
-        ]);
-        $levelAkses = db_user_level_akses::where('id_anggota', $id)->first();
-        $levelAkses->update([
-            'id_anggota' => $id,
-            'jenis_user' => $request->level,
-            'id_level' => $request->level,
-            'status' => $request->status,
-            'id_user' => 0,
-            'id_pegawai' => 0
         ]);
         $sidebar = [];
         if (Auth::guard('web')->check()) {
