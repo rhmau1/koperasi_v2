@@ -30,8 +30,8 @@
                                             <td class="text-center">
                                                 <div class="btn-group" role="group">
                                                     <!-- Tombol Pilih -->
-                                                    <form action="{{ route('level.store') }}" method="POST"
-                                                        style="display:inline;">
+                                                    <form action="{{ route('rolePegawai.store', $pegawaiId) }}"
+                                                        method="POST" style="display:inline;">
                                                         @csrf
                                                         <input type="hidden" name="id_level"
                                                             value="{{ $level->id_level }}">
@@ -79,10 +79,12 @@
                                                 <div class="btn-group" role="group">
                                                     <!-- Tombol Hapus -->
                                                     @if ($level->status == 0)
-                                                        <form action="{{ route('level.delete', $level->level->id_level) }}"
+                                                        <form action="{{ route('rolePegawai.delete', $pegawaiId) }}"
                                                             method="POST" style="display:inline;">
                                                             @csrf
                                                             @method('DELETE')
+                                                            <input type="hidden" name="id_level"
+                                                                value="{{ $level->level->id_level }}">
                                                             <button type="submit" class="btn btn-danger btn-sm bs-tooltip"
                                                                 data-toggle="tooltip" data-placement="top"
                                                                 onclick="return confirm('Apakah Anda yakin ingin menghapus level {{ $level->level->nama_level }} ini?');"

@@ -136,37 +136,37 @@ class LoginController extends Controller
                 $userLevels->update([
                     'status' => 0
                 ]);
+                if (Auth::guard('web')->check()) {
+                    $level->update([
+                        'id_user' => $userId,
+                        'id_level' => $id,
+                        'jenis_user' => $id,
+                        'id_pegawai' => 0,
+                        'id_anggota' => 0,
+                        'status' => 1
+                    ]);
+                } elseif (Auth::guard('pegawai')->check()) {
+                    $level->update([
+                        'id_user' => 0,
+                        'id_level' => $id,
+                        'jenis_user' => $id,
+                        'id_pegawai' => $userId,
+                        'id_anggota' => 0,
+                        'status' => 1
+                    ]);
+                } elseif (Auth::guard('anggota')->check()) {
+                    $level->update([
+                        'id_user' => 0,
+                        'id_level' => $id,
+                        'jenis_user' => $id,
+                        'id_anggota' => $userId,
+                        'id_pegawai' => 0,
+                        'status' => 1
+                    ]);
+                }
             }
         }
 
-        if (Auth::guard('web')->check()) {
-            $level->update([
-                'id_user' => $userId,
-                'id_level' => $id,
-                'jenis_user' => $id,
-                'id_pegawai' => 0,
-                'id_anggota' => 0,
-                'status' => 1
-            ]);
-        } elseif (Auth::guard('pegawai')->check()) {
-            $level->update([
-                'id_user' => 0,
-                'id_level' => $id,
-                'jenis_user' => $id,
-                'id_pegawai' => $userId,
-                'id_anggota' => 0,
-                'status' => 1
-            ]);
-        } elseif (Auth::guard('anggota')->check()) {
-            $level->update([
-                'id_user' => 0,
-                'id_level' => $id,
-                'jenis_user' => $id,
-                'id_anggota' => $userId,
-                'id_pegawai' => 0,
-                'status' => 1
-            ]);
-        }
         return redirect()->route('dashboard');
     }
 }

@@ -22,9 +22,12 @@ Route::middleware('auth:web,pegawai,anggota')->group(function () {
     Route::post('/logout/anggota', [LoginController::class, 'logoutAnggota'])->name('anggota.logout');
     Route::get('pilih-role', [LoginController::class, 'pilihRole'])->name('pilihRole');
     Route::put('pilih-role/{id}', [LoginController::class, 'pilihRoleUpdate'])->name('pilihRole.update');
-    Route::get('dashboard/level', [DashboardController::class, 'level'])->name('level');
-    Route::post('dashboard/level', [DashboardController::class, 'levelStore'])->name('level.store');
-    Route::delete('dashboard/level/{id}', [DashboardController::class, 'levelDelete'])->name('level.delete');
+    Route::get('dashboard/role-pegawai/{id}', [DashboardController::class, 'rolePegawai'])->name('rolePegawai');
+    Route::post('dashboard/role-pegawai/{id}', [DashboardController::class, 'rolePegawaiStore'])->name('rolePegawai.store');
+    Route::delete('dashboard/role-pegawai/{id}', [DashboardController::class, 'rolePegawaiDelete'])->name('rolePegawai.delete');
+    Route::get('dashboard/role-user/{id}', [DashboardController::class, 'roleUser'])->name('roleUser');
+    Route::post('dashboard/role-user/{id}', [DashboardController::class, 'roleUserStore'])->name('roleUser.store');
+    Route::delete('dashboard/role-user/{id}', [DashboardController::class, 'roleUserDelete'])->name('roleUser.delete');
 
     Route::get('dashboard/user/input-user', [DashboardController::class, 'inputUser'])->name('inputUser');
     Route::get('dashboard/user/input-user/create', [DashboardController::class, 'inputUserCreate'])->name('inputUser.create');
